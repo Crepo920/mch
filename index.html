@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>MPSC Cricket HUB</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#080808;color:#fff;user-select:none}
+button{font:inherit;cursor:pointer}
+.screen{position:absolute;inset:0;display:none;overflow:hidden}
+.screen.active{display:flex}
+a{color:#ffe066;text-decoration:none}
+
+/* Splash */
+#splash{align-items:center;justify-content:center;background:#000}
+#splashLogo{width:min(42vw,320px);height:min(42vw,320px);object-fit:contain;opacity:0;transform:scale(.92);animation:splashIn 1s ease forwards}
+@keyframes splashIn{to{opacity:1;transform:scale(1)}}
+
+/* Home */
+#home{align-items:center;justify-content:center}
+.homeBg{position:absolute;inset:0;background:url("hbg.png") center/cover no-repeat}
+.homeShade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.65))}
+.homeUI{position:relative;z-index:2;width:min(92vw,900px);display:flex;flex-direction:column;align-items:center;text-align:center}
+.homeLogo{width:min(240px,42vw);height:min(240px,42vw);object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.7));margin-bottom:24px}
+.menuButtons{display:flex;flex-direction:column;gap:12px;width:min(310px,75vw)}
+.menuBtn{border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.5);color:#fff;padding:14px 24px;border-radius:12px;backdrop-filter:blur(7px);transition:.18s;font-size:20px;font-weight:700;letter-spacing:1.5px}
+.menuBtn:hover{transform:translateY(-2px);background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.7)}
+.aboutLink{position:absolute;z-index:3;left:20px;bottom:17px;color:#fff;background:rgba(0,0,0,.4);padding:7px 11px;border-radius:8px;font-size:13px;backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.15);transition:0.2s}
+.aboutLink:hover{background:rgba(255,255,255,.1)}
+.homeBest{position:absolute;z-index:3;right:20px;bottom:17px;color:#fff;background:rgba(0,0,0,.4);padding:7px 12px;border-radius:8px;font-size:13px;backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.15);font-weight:600}
+
+/* Game */
+#game{background:#000;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation}
+#c{max-width:100vw;max-height:100vh;aspect-ratio:1060/663;display:block}
+.gameExit{position:absolute;z-index:20;top:14px;right:14px;padding:9px 14px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.5);color:#fff;border-radius:9px;backdrop-filter:blur(5px);font-weight:600;font-size:13px}
+
+/* Overlay */
+.overlay{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);padding:20px}
+.overlay.open{display:flex}
+.panel{position:relative;width:min(720px,92vw);max-height:90vh;overflow:auto;padding:26px;border-radius:18px;background:rgba(12,14,20,.94);border:1px solid rgba(255,255,255,.15);box-shadow:0 20px 70px rgba(0,0,0,.6)}
+.panel h1{margin:0 0 18px;font-size:28px}
+.panel h2{margin:20px 0 10px;font-size:16px;color:#ffe066;text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.panel h2:first-of-type{margin-top:0}
+.panel p{margin:0 0 12px;line-height:1.5;font-size:14px;color:#ccc}
+.closeX{position:absolute;top:14px;right:16px;background:transparent;border:none;color:#fff;font-size:22px;opacity:.7}
+.closeX:hover{opacity:1}
+.settingRow{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.settingRow:last-child{border-bottom:0}
+.switch{appearance:none;width:48px;height:26px;border-radius:30px;background:#444;position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+.switch:before{content:"";position:absolute;width:20px;height:20px;top:3px;left:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch:checked{background:#ffe066}
+.switch:checked:before{left:25px}
+.volRow{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.volRow .volTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px}
+.volSlider{width:100%;accent-color:#ffe066}
+
+/* Sprite grid */
+#settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.slot{background:#1e2028;border-radius:10px;padding:9px;text-align:center;border:1px solid rgba(255,255,255,.06)}
+.slot .preview{width:100%;aspect-ratio:1;background:#000;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:7px}
+.slot .preview img{max-width:100%;max-height:100%;object-fit:contain}
+.slot .preview .default{color:#555;font-size:10px}
+.slot .label{font-size:11px;color:#bbb;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.slot input[type=file]{display:none}
+.slot label.btn{display:inline-block;padding:5px 9px;background:#ffe066;color:#111;border-radius:5px;cursor:pointer;font-size:11px;font-weight:700}
+.slot .clear{display:block;margin-top:5px;font-size:10px;color:#777;cursor:pointer}
+.slot .clear:hover{color:#f66}
+.actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.backBtn{padding:11px 24px;background:#ffe066;color:#111;border:none;border-radius:9px;font-size:15px;font-weight:700}
+.hsRow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:14px}
+
+@media(max-width:600px){
+  .panel{padding:20px 16px}
+  .homeLogo{margin-bottom:16px}
+  .menuBtn{font-size:18px;padding:12px 20px}
+  #settings-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<section id="splash" class="screen active">
+  <img id="splashLogo" src="logo.png" alt="MPSC Cricket HUB">
+</section>
+
+<section id="home" class="screen">
+  <div class="homeBg"></div>
+  <div class="homeShade"></div>
+  <div class="homeUI">
+    <img class="homeLogo" src="logo.png" alt="MPSC Cricket HUB">
+    <div class="menuButtons">
+      <button class="menuBtn" id="playBtn">PLAY</button>
+      <button class="menuBtn" id="settingsBtn">SETTINGS</button>
+      <button class="menuBtn" id="creditsBtn">CREDITS</button>
+    </div>
+  </div>
+  <div class="homeBest">Best: <span id="homeBestVal">0</span></div>
+</section>
+
+<section id="game" class="screen">
+  <canvas id="c" width="1060" height="663"></canvas>
+  <button class="gameExit" id="gameExit">EXIT</button>
+</section>
+
+<!-- Settings -->
+<div id="settingsOverlay" class="overlay">
+  <div class="panel">
+    <button class="closeX" id="settingsClose">✕</button>
+    <h1>Settings</h1>
+    <h2>Audio</h2>
+    <div class="settingRow"><span>Home Music</span><input type="checkbox" class="switch" id="homeMusicToggle"></div>
+    <div class="volRow">
+      <div class="volTop"><span>Home Volume</span><span id="homeVolLabel">20%</span></div>
+      <input type="range" id="homeVolume" class="volSlider" min="0" max="100" value="20">
+    </div>
+    <div class="settingRow"><span>Game Music</span><input type="checkbox" class="switch" id="gameMusicToggle"></div>
+    <div class="volRow">
+      <div class="volTop"><span>Game Volume</span><span id="gameVolLabel">30%</span></div>
+      <input type="range" id="gameVolume" class="volSlider" min="0" max="100" value="30">
+    </div>
+    <h2>Gameplay</h2>
+    <div class="volRow">
+      <div class="volTop"><span>Difficulty</span><span id="diffLabel">Easy (20)</span></div>
+      <input type="range" id="difficulty" class="volSlider" min="0" max="100" value="20">
+    </div>
+    <h2>Custom Sprites</h2>
+    <p style="font-size:12px;color:#999;margin:0 0 12px">Upload your own PNGs. Transparent PNG recommended. Background should be 1060×663.</p>
+    <div id="settings-grid"></div>
+    <div class="actions">
+      <button class="backBtn" id="settingsBack">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Credits -->
+<div id="creditsOverlay" class="overlay">
+  <div class="panel">
+    <button class="closeX" id="creditsClose">✕</button>
+    <h1>Credits</h1>
+
+    <h2>About the Game</h2>
+    <p>"MPSC Cricket HUB" is a fast-paced, arcade-style cricket game inspired by the classic Google Doodle Cricket. Step up to the crease, time your swing perfectly, and rack up as many runs as you can before the fielders get you out!</p>
+
+    <h2>About the Developer</h2>
+    <p>Hey! I'm Safin, an 18-year-old game developer who loves creating and playing games. My favorite game is Minecraft, and I enjoy making creative or story-driven games.</p>
+
+    <h2>Contact Me</h2>
+    <p>Facebook: <a href="https://www.facebook.com/shahariarkabir.shafin.5" target="_blank" rel="noopener">Shahariar Kabir Shafin</a><br>
+    Instagram: <a href="https://www.instagram.com/not__safin_/" target="_blank" rel="noopener">@not__safin_</a></p>
+
+    <h2>Special Thanks</h2>
+    <p>Thanks to everyone who supported this game, tested it, or gave feedback.</p>
+
+    <div class="actions">
+      <button class="backBtn" id="creditsBack">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<audio id="homeAudio" src="hbg.mp3" loop></audio>
+<audio id="gameAudio" src="bg.mp3" loop></audio>
+
+<script>
+(() => {
+'use strict';
+
+const $ = id => document.getElementById(id);
+const cvs = $('c');
+const ctx = cvs.getContext('2d');
+const W = 1060, H = 663;
+const BEST_KEY = 'mpsc-cricket-best';
+const SETTINGS_KEY = 'mpsc-cricket-settings';
+
+const screens = ['splash','home','game'].map($);
+function showScreen(name){
+  screens.forEach(s => s.classList.remove('active'));
+  $('settingsOverlay').classList.remove('open');
+  $('creditsOverlay').classList.remove('open');
+  if (name === 'splash') $('splash').classList.add('active');
+  else if (name === 'home') $('home').classList.add('active');
+  else if (name === 'game') $('game').classList.add('active');
+}
+
+// ================== SETTINGS ==================
+const defaultSettings = { 
+  homeMusic: true, gameMusic: true, 
+  homeVolume: 20, gameVolume: 30,
+  difficulty: 20 
+};
+let settings = { ...defaultSettings, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') };
+function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+
+const homeAudio = $('homeAudio');
+const gameAudio = $('gameAudio');
+function applyAudio(){
+  homeAudio.muted = !settings.homeMusic;
+  gameAudio.muted = !settings.gameMusic;
+  homeAudio.volume = Math.max(0, Math.min(100, settings.homeVolume)) / 100;
+  gameAudio.volume = Math.max(0, Math.min(100, settings.gameVolume)) / 100;
+  $('homeVolLabel').textContent = settings.homeVolume + '%';
+  $('gameVolLabel').textContent = settings.gameVolume + '%';
+  $('homeVolume').value = settings.homeVolume;
+  $('gameVolume').value = settings.gameVolume;
+  $('homeMusicToggle').checked = settings.homeMusic;
+  $('gameMusicToggle').checked = settings.gameMusic;
+}
+applyAudio();
+
+$('homeMusicToggle').addEventListener('change', e => {
+  settings.homeMusic = e.target.checked; saveSettings(); applyAudio();
+  if (settings.homeMusic && $('home').classList.contains('active')) startHomeAudio();
+});
+$('gameMusicToggle').addEventListener('change', e => {
+  settings.gameMusic = e.target.checked; saveSettings(); applyAudio();
+  if (settings.gameMusic && $('game').classList.contains('active')) startGameAudio();
+});
+$('homeVolume').addEventListener('input', e => { settings.homeVolume = +e.target.value; saveSettings(); applyAudio(); });
+$('gameVolume').addEventListener('input', e => { settings.gameVolume = +e.target.value; saveSettings(); applyAudio(); });
+
+function applyDifficulty(){
+  $('difficulty').value = settings.difficulty;
+  let label = 'Easy';
+  if (settings.difficulty > 70) label = 'Hard';
+  else if (settings.difficulty > 35) label = 'Normal';
+  $('diffLabel').textContent = `${label} (${settings.difficulty})`;
+}
+$('difficulty').addEventListener('input', e => {
+  settings.difficulty = +e.target.value;
+  saveSettings();
+  applyDifficulty();
+});
+applyDifficulty();
+
+// Audio playback with autoplay-safe unlock
+let userInteracted = false;
+let pendingHomeStart = false;
+function markInteracted(){
+  if (userInteracted) return;
+  userInteracted = true;
+  if (pendingHomeStart) startHomeAudio();
+}
+['pointerdown','keydown','touchstart'].forEach(ev =>
+  document.addEventListener(ev, markInteracted, { once: true, passive: true })
+);
+function startHomeAudio(){
+  if (!settings.homeMusic) return;
+  gameAudio.pause();
+  const p = homeAudio.play();
+  if (p && p.catch) p.catch(() => { pendingHomeStart = true; });
+}
+function stopHomeAudio(){ pendingHomeStart = false; homeAudio.pause(); }
+function startGameAudio(){
+  stopHomeAudio();
+  if (!settings.gameMusic) return;
+  gameAudio.currentTime = 0;
+  gameAudio.play().catch(()=>{});
+}
+function stopGameAudio(){ gameAudio.pause(); }
+
+// ================== BEST SCORE ==================
+let best = +(localStorage.getItem(BEST_KEY) || 0);
+$('homeBestVal').textContent = best;
+
+// ================== INDEXEDDB ==================
+const DB_NAME = 'mpsc-cricket-sprites';
+const DB_VER = 1;
+let dbCache = null;
+function openDB(){
+  if (dbCache) return Promise.resolve(dbCache);
+  return new Promise((res,rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = () => req.result.createObjectStore('sprites');
+    req.onsuccess = () => { dbCache = req.result; res(dbCache); };
+    req.onerror = () => rej(req.error);
+  });
+}
+async function dbSave(k,v){
+  const d = await openDB();
+  return new Promise((res,rej) => {
+    const tx = d.transaction('sprites','readwrite');
+    tx.objectStore('sprites').put(v,k);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function dbLoad(k){
+  const d = await openDB();
+  return new Promise((res,rej) => {
+    const tx = d.transaction('sprites','readonly');
+    const req = tx.objectStore('sprites').get(k);
+    req.onsuccess = () => res(req.result || null);
+    req.onerror = () => rej(req.error);
+  });
+}
+async function dbDelete(k){
+  const d = await openDB();
+  return new Promise((res,rej) => {
+    const tx = d.transaction('sprites','readwrite');
+    tx.objectStore('sprites').delete(k);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+
+// ================== SPRITES ==================
+const SPRITE_KEYS = ['background','catcher1','catcher2','catcher3','catcher4','catcher5','catcher6','runner1','runner2','bowler','umpire','ball'];
+const SPRITE_LABELS = {
+  background:'Background',
+  catcher1:'Catcher 1', catcher2:'Catcher 2', catcher3:'Catcher 3',
+  catcher4:'Catcher 4', catcher5:'Catcher 5', catcher6:'Catcher 6',
+  runner1:'Striker', runner2:'Non-striker',
+  bowler:'Bowler', umpire:'Umpire', ball:'Ball'
+};
+const DEFAULT_ASSETS = {
+  background:'bg.webp',
+  catcher1:'ch1.png', catcher2:'ch2.png', catcher3:'ch3.png',
+  catcher4:'ch4.png', catcher5:'ch5.png', catcher6:'ch6.png',
+  runner1:'p1.png', runner2:'p2.png',
+  bowler:'b1.png', umpire:'u1.png',
+  ball:'ball.png'
+};
+const sprites = {};
+
+function loadImage(src){
+  return new Promise(res => {
+    if (!src) return res(null);
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = () => res(null);
+    img.src = src;
+  });
+}
+
+async function preloadAll(){
+  for (const key of SPRITE_KEYS){
+    const custom = await dbLoad(key);
+    if (custom){
+      sprites[key] = await loadImage(custom);
+    } else {
+      sprites[key] = await loadImage(DEFAULT_ASSETS[key]);
+    }
+  }
+}
+
+// ================== GEOMETRY ==================
+const BOWLER_HOME = {x:530, y:290};
+const BOWLER_WIND = {x:530, y:250};
+const NEAR_W = {x:480, y:460};
+const FAR_W  = {x:482, y:280};
+const STUMPS = {x:530, y:470};
+const FAR_STUMPS = {x:530, y:260};
+const CONTACT_T = 0.82;
+const BOUND = {left:100, right:960, top:310, bottom:630};
+
+const FIELDER_SPOTS = [
+  {x:350, y:360}, {x:700, y:360},
+  {x:300, y:480}, {x:750, y:480},
+  {x:430, y:240}, {x:630, y:240}
+];
+
+// ================== DELIVERIES ==================
+const DEL = {
+  straight:{dur:0.72, drift:0,    bounce:0.62},
+  drifterL:{dur:0.78, drift:-90,  bounce:0.62},
+  drifterR:{dur:0.78, drift: 90,  bounce:0.62},
+  fast:    {dur:0.54, drift:0,    bounce:0.70},
+  slow:    {dur:1.10, drift:0,    bounce:0.55},
+  bouncer: {dur:0.90, drift:0,    bounce:0.32, double:true}
+};
+
+// ================== STATE ==================
+let state = 'MENU';
+let score = 0, ballCount = 0;
+let resultText = '';
+let resultColor = '#ffe066';
+let resultTimer = 0;
+let runupTimer = 0;
+let swingFlash = 0;
+let bowlerBob = 0;
+let outTimer = 0;
+let umpireRise = 0;
+
+let running = {active:false, elapsed:0, runs:0, strikerPos:0, nonStrikerPos:1};
+let chaser = null;
+
+const ball = {
+  x:0, y:0, z:0, t:0, dur:0.7, mult:1,
+  drift:0, bounce:0.62, double:false,
+  whiffed:false, mode:null,
+  hitData:null, throwData:null, chaser:null
+};
+
+// ================== CAMERA ==================
+const camera = { zoom:1, targetZoom:1, fx:W/2, fy:H/2, targetFx:W/2, targetFy:H/2, shake:0 };
+function setCamera(z,fx,fy){ camera.targetZoom=z; camera.targetFx=fx; camera.targetFy=fy; }
+function resetCamera(){ setCamera(1,W/2,H/2); camera.shake=0; }
+function updateCamera(dt){
+  const k = 1 - Math.pow(0.0005, dt);
+  camera.zoom += (camera.targetZoom - camera.zoom)*k;
+  camera.fx += (camera.targetFx - camera.fx)*k;
+  camera.fy += (camera.targetFy - camera.fy)*k;
+  camera.shake *= Math.pow(0.0001, dt);
+}
+function applyCamera(){
+  ctx.save();
+  ctx.translate(W/2, H/2);
+  ctx.scale(camera.zoom, camera.zoom);
+  ctx.translate(-camera.fx, -camera.fy);
+  if (camera.shake > 0.3) ctx.translate((Math.random()-0.5)*camera.shake, (Math.random()-0.5)*camera.shake);
+}
+function restoreCamera(){ ctx.restore(); }
+
+// ================== FIELDERS ==================
+const fielders = FIELDER_SPOTS.map((s,i) => ({
+  id:i, x:s.x, y:s.y, homeX:s.x, homeY:s.y,
+  tx:s.x, ty:s.y, state:'idle'
+}));
+
+function nearestFielder(x,y){
+  let b=null, bd=Infinity;
+  for (const f of fielders){
+    const d = Math.hypot(f.x-x, f.y-y);
+    if (d < bd){ bd=d; b=f; }
+  }
+  return b;
+}
+
+// ================== BALLOONS ==================
+const balloons = [];
+function spawnBalloons(n,colors){
+  for (let i=0;i<n;i++){
+    balloons.push({
+      x:180+Math.random()*700, y:175+Math.random()*30,
+      vx:(Math.random()-0.5)*50, vy:-60-Math.random()*60,
+      r:6+Math.random()*5,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      life:2.4, phase:Math.random()*Math.PI*2
+    });
+  }
+}
+function updateBalloons(dt){
+  for (let i=balloons.length-1;i>=0;i--){
+    const b = balloons[i];
+    b.x += b.vx*dt + Math.sin(b.phase)*25*dt;
+    b.y += b.vy*dt;
+    b.vy -= 15*dt;
+    b.phase += dt*3;
+    b.life -= dt;
+    if (b.life<=0) balloons.splice(i,1);
+  }
+}
+
+// ================== HELPERS ==================
+const lerp = (a,b,t)=>a+(b-a)*t;
+const mult = () => Math.min(0.90 + 0.01*score, 2.00);
+
+function pickDelivery(){
+  ballCount++;
+  if (ballCount===1) return DEL.straight;
+  if (ballCount===2) return DEL.drifterL;
+  if (ballCount===4) return DEL.drifterR;
+  if (ballCount===6) return Math.random()<0.5?DEL.fast:DEL.slow;
+  if (ballCount===11) return DEL.bouncer;
+  const r = Math.random();
+  if (r<2/9) return DEL.fast;
+  if (r<4/9) return DEL.drifterL;
+  if (r<6/9) return DEL.drifterR;
+  if (r<7/9) return DEL.straight;
+  if (r<8/9) return DEL.slow;
+  return DEL.bouncer;
+}
+
+// ================== FLOW ==================
+function startRunup(){
+  state = 'RUNUP';
+  runupTimer = 0;
+  resetCamera();
+  ball.mode = null;
+  ball.whiffed = false;
+  ball.chaser = null;
+  ball.x = BOWLER_HOME.x; ball.y = BOWLER_HOME.y; ball.z = 0;
+  running.active = false;
+  chaser = null;
+  for (const f of fielders){ f.tx = f.homeX; f.ty = f.homeY; f.state = 'idle'; }
+}
+
+function releaseDelivery(){
+  const d = pickDelivery();
+  ball.t = 0;
+  ball.mult = mult();
+  
+  // Difficulty scales bowler speed (higher difficulty = faster bowler)
+  const diffSpeed = 1.25 - (settings.difficulty * 0.0045); // 1.25 at 0, 0.8 at 100
+  ball.dur = (d.dur / ball.mult) * diffSpeed; 
+  
+  ball.drift = d.drift;
+  ball.bounce = d.bounce;
+  ball.double = !!d.double;
+  ball.mode = 'DELIVERY';
+  ball.whiffed = false;
+  state = 'DELIVERY';
+}
+
+function nextBall(){
+  resultText = '';
+  resetCamera();
+  startRunup();
+}
+
+// ================== HIT ==================
+function decideHit(timingMs){
+  const a = Math.abs(timingMs);
+  let power, loftChance;
+  if (a < 90)       { power = 0.65 + Math.random()*0.35; loftChance = 0.7; }
+  else if (a < 200) { power = 0.40 + Math.random()*0.35; loftChance = 0.4; }
+  else if (a < 350) { power = 0.15 + Math.random()*0.30; loftChance = 0.15; }
+  else return null;
+  const loft = Math.random() < loftChance ? 0.4 + Math.random()*0.6 : Math.random()*0.2;
+  const angle = (Math.random()-0.5) * Math.PI * 1.7;
+  return { power, loft, angle };
+}
+
+function launchHit(hit){
+  const dist = 100 + hit.power * 350;
+  const endX = NEAR_W.x + Math.sin(hit.angle) * dist;
+  const endY = NEAR_W.y - Math.cos(hit.angle) * dist;
+  const flightDist = Math.hypot(endX - ball.x, endY - ball.y);
+  const flightDur = 0.4 + flightDist / 550;
+
+  const chasingFielder = nearestFielder(endX, endY);
+  chasingFielder.state = 'chasing';
+  chasingFielder.tx = endX;
+  chasingFielder.ty = endY;
+
+  ball.hitData = {
+    startX: ball.x, startY: ball.y,
+    endX, endY,
+    peakZ: hit.loft * 130,
+    dur: flightDur, t: 0,
+    landed: false,
+    airborne: hit.loft > 0.25,
+    chaser: chasingFielder,
+    cameraTriggered: false
+  };
+  ball.chaser = chasingFielder;
+  ball.mode = 'FLIGHT';
+  ball.z = 0;
+  state = 'PLAY';
+
+  running = { active:true, elapsed:0, runs:0, strikerPos:0, nonStrikerPos:1 };
+  swingFlash = 0.15;
+}
+
+function updateFlight(dt){
+  const h = ball.hitData;
+  if (!h) return;
+  h.t += dt / h.dur;
+  const t = Math.min(1, h.t);
+
+  ball.x = lerp(h.startX, h.endX, t);
+  ball.y = lerp(h.startY, h.endY, t);
+  ball.z = 4 * h.peakZ * t * (1 - t);
+
+  if (ball.x < BOUND.left || ball.x > BOUND.right || ball.y < BOUND.top || ball.y > BOUND.bottom){
+    endDelivery(ball.z > 10 || h.airborne ? 'SIX' : 'FOUR');
+    return;
+  }
+
+  // Catch radius scales with difficulty
+  const catchRadius = 15 + (settings.difficulty * 0.25); 
+  
+  if (h.airborne && h.chaser && ball.z > 12 && ball.z < 85){
+    const d = Math.hypot(h.chaser.x - ball.x, h.chaser.y - ball.y);
+    if (d < catchRadius){
+      endDelivery('CAUGHT');
+      return;
+    }
+  }
+
+  if (!h.cameraTriggered && h.airborne && h.peakZ > 55 && t > 0.55){
+    h.cameraTriggered = true;
+    setCamera(1.35, (h.startX + ball.x)/2, (h.startY + ball.y)/2 - 40);
+    camera.shake = 5;
+  }
+
+  if (t >= 1 && !h.landed){
+    h.landed = true;
+    ball.mode = 'GROUND';
+  }
+}
+
+function updateGround(dt){
+  const f = ball.chaser;
+  if (!f) return;
+  const d = Math.hypot(f.x - ball.x, f.y - ball.y);
+  if (d < 14){
+    startThrow(f);
+  }
+}
+
+function startThrow(f){
+  ball.mode = 'THROW';
+  ball.throwData = {
+    startX: f.x, startY: f.y,
+    endX: BOWLER_HOME.x, endY: BOWLER_HOME.y,
+    t: 0, dur: 0.45
+  };
+  f.state = 'throwing';
+}
+
+function updateThrow(dt){
+  const th = ball.throwData;
+  if (!th) return;
+  th.t += dt / th.dur;
+  const t = Math.min(1, th.t);
+  ball.x = lerp(th.startX, th.endX, t);
+  ball.y = lerp(th.startY, th.endY, t);
+  ball.z = 45 * Math.sin(t * Math.PI);
+  if (t >= 1){
+    endDelivery('RUNS');
+  }
+}
+
+function updateRunning(dt){
+  if (!running.active) return;
+  running.elapsed += dt;
+  const runDur = 1.0 / mult();
+  running.runs = Math.floor(running.elapsed / runDur);
+  const totalPhase = running.elapsed / runDur;
+  const lapNum = Math.floor(totalPhase);
+  const lapPhase = totalPhase - lapNum;
+  running.strikerPos = lapNum % 2 === 0 ? lapPhase : 1 - lapPhase;
+  running.nonStrikerPos = 1 - running.strikerPos;
+}
+
+function getBatterPos(isStriker){
+  const p = isStriker ? running.strikerPos : running.nonStrikerPos;
+  return {
+    x: lerp(NEAR_W.x, FAR_W.x, p),
+    y: lerp(NEAR_W.y, FAR_W.y, p)
+  };
+}
+
+function updateFielders(dt){
+  // Fielder speed scales with difficulty
+  const fSpeed = 150 + (settings.difficulty * 2); 
+
+  for (const f of fielders){
+    const dx = f.tx - f.x, dy = f.ty - f.y;
+    const d = Math.hypot(dx, dy);
+    if (d > 1.5){
+      f.x += (dx/d) * fSpeed * dt;
+      f.y += (dy/d) * fSpeed * dt;
+    }
+  }
+}
+
+// ================== END DELIVERY ==================
+function endDelivery(outcome){
+  ball.mode = null;
+  running.active = false;
+
+  if (outcome === 'SIX'){
+    score += 6;
+    resultText = 'SIX!'; resultColor = '#9370db';
+    spawnBalloons(14, ['#9370db','#b088e0','#7a5ad0']);
+    resultTimer = 1.6; setCamera(1.35, W/2, 300);
+    camera.shake = 10;
+    state = 'RESULT';
+  } else if (outcome === 'FOUR'){
+    score += 4;
+    resultText = 'FOUR!'; resultColor = '#20b2aa';
+    spawnBalloons(10, ['#20b2aa','#3dd6ce','#1a9c95']);
+    resultTimer = 1.2; camera.shake = 6;
+    state = 'RESULT';
+  } else if (outcome === 'CAUGHT'){
+    triggerOut('CAUGHT!');
+  } else if (outcome === 'RUNS'){
+    const runs = running.runs;
+    if (runs > 0){
+      score += runs;
+      resultText = runs === 1 ? '1 RUN' : runs + ' RUNS';
+      resultColor = runs >= 3 ? '#4169e1' : '#ffd700';
+      const cols = runs >= 3 ? ['#4169e1','#5a7ff0','#3155c9'] : ['#ffd700','#ffed4a','#e0b800'];
+      spawnBalloons(4 + runs*2, cols);
+    } else {
+      resultText = 'DOT BALL'; resultColor = '#aaa';
+    }
+    resultTimer = 1.0;
+    state = 'RESULT';
+  }
+  if (score > best){ best = score; localStorage.setItem(BEST_KEY, best); $('homeBestVal').textContent = best; }
+}
+
+function triggerOut(reason){
+  state = 'OUT_SEQ';
+  outTimer = 0; umpireRise = 0;
+  resultText = reason; resultColor = '#ff4444';
+  running.active = false;
+  ball.mode = null;
+  setCamera(1.4, 850, 330); // Moved top right
+  if (score > best){ best = score; localStorage.setItem(BEST_KEY, best); $('homeBestVal').textContent = best; }
+}
+
+// ================== INPUT ==================
+function swing(){
+  if (ball.whiffed) return;
+  if (state !== 'DELIVERY') return;
+  const timingMs = (ball.t - CONTACT_T) * ball.dur * 1000;
+  const hit = decideHit(timingMs);
+  swingFlash = 0.12;
+  if (!hit){ ball.whiffed = true; return; }
+  launchHit(hit);
+}
+
+cvs.addEventListener('mousedown', e => {
+  e.preventDefault();
+  if (state === 'GAME_OVER'){ startGame(); return; }
+  if (state === 'DELIVERY') swing();
+});
+cvs.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (state === 'GAME_OVER'){ startGame(); return; }
+  if (state === 'DELIVERY') swing();
+}, {passive:false});
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'Enter'){
+    e.preventDefault();
+    if (!$('game').classList.contains('active')) return;
+    if (state === 'GAME_OVER'){ startGame(); return; }
+    if (state === 'DELIVERY') swing();
+  }
+});
+
+// ================== GAME START/END ==================
+function startGame(){
+  showScreen('game');
+  startGameAudio();
+  score = 0; ballCount = 0;
+  resultText = ''; resultColor = '#ffe066';
+  running = {active:false, elapsed:0, runs:0, strikerPos:0, nonStrikerPos:1};
+  for (const f of fielders){ f.x=f.homeX; f.y=f.homeY; f.tx=f.homeX; f.ty=f.homeY; f.state='idle'; }
+  balloons.length = 0;
+  chaser = null;
+  nextBall();
+}
+
+function exitGame(){
+  stopGameAudio();
+  showScreen('home');
+  startHomeAudio();
+}
+
+// ================== SETTINGS UI ==================
+function buildSettings(){
+  const grid = $('settings-grid');
+  grid.innerHTML = '';
+  for (const key of SPRITE_KEYS){
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.innerHTML = `
+      <div class="preview" id="prev-${key}"></div>
+      <div class="label">${SPRITE_LABELS[key]}</div>
+      <input type="file" id="file-${key}" accept="image/*">
+      <label for="file-${key}" class="btn">Upload</label>
+      <span class="clear" data-key="${key}">Reset</span>
+    `;
+    grid.appendChild(slot);
+  }
+  refreshPreviews();
+  for (const key of SPRITE_KEYS){
+    $('file-'+key).addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async ev => {
+        const url = ev.target.result;
+        await dbSave(key, url);
+        sprites[key] = await loadImage(url);
+        refreshPreviews();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  grid.querySelectorAll('.clear').forEach(el => {
+    el.addEventListener('click', async () => {
+      const key = el.dataset.key;
+      await dbDelete(key);
+      sprites[key] = await loadImage(DEFAULT_ASSETS[key]);
+      refreshPreviews();
+    });
+  });
+}
+
+function refreshPreviews(){
+  for (const key of SPRITE_KEYS){
+    const prev = $('prev-'+key);
+    if (!prev) continue;
+    if (sprites[key]){
+      prev.innerHTML = '';
+      const im = document.createElement('img');
+      im.src = sprites[key].src;
+      prev.appendChild(im);
+    } else {
+      prev.innerHTML = '<span class="default">Default</span>';
+    }
+  }
+}
+
+// ================== NAVIGATION ==================
+$('playBtn').addEventListener('click', () => startGame());
+$('settingsBtn').addEventListener('click', () => { buildSettings(); $('settingsOverlay').classList.add('open'); });
+$('creditsBtn').addEventListener('click', () => $('creditsOverlay').classList.add('open'));
+
+$('settingsClose').addEventListener('click', () => $('settingsOverlay').classList.remove('open'));
+$('settingsBack').addEventListener('click', () => $('settingsOverlay').classList.remove('open'));
+$('settingsOverlay').addEventListener('click', e => { if (e.target.id === 'settingsOverlay') $('settingsOverlay').classList.remove('open'); });
+
+$('creditsClose').addEventListener('click', () => $('creditsOverlay').classList.remove('open'));
+$('creditsBack').addEventListener('click', () => $('creditsOverlay').classList.remove('open'));
+$('creditsOverlay').addEventListener('click', e => { if (e.target.id === 'creditsOverlay') $('creditsOverlay').classList.remove('open'); });
+
+$('gameExit').addEventListener('click', exitGame);
+
+// ================== UPDATE ==================
+function update(dt){
+  updateBalloons(dt);
+  updateCamera(dt);
+
+  if (state === 'RUNUP'){
+    runupTimer += dt;
+    bowlerBob = Math.sin(runupTimer * 12) * 4;
+    if (runupTimer >= 1.2){ bowlerBob = 0; releaseDelivery(); }
+  } else if (state === 'DELIVERY'){
+    ball.t += dt / ball.dur;
+    const t = Math.min(1, ball.t);
+    const bx = lerp(BOWLER_HOME.x, STUMPS.x, t);
+    const by = lerp(BOWLER_HOME.y, STUMPS.y, t);
+    let h = 0;
+    if (!ball.double){
+      if (t < ball.bounce) h = 10 * (1 - t/ball.bounce);
+      else { const p = (t-ball.bounce)/(1-ball.bounce); h = Math.sin(p*Math.PI) * 14; }
+    } else {
+      if (t < ball.bounce) h = 8 * (1 - t/ball.bounce);
+      else if (t < ball.bounce + 0.25){
+        const p = (t-ball.bounce)/0.25; h = Math.sin(p*Math.PI) * 10;
+      } else {
+        const p = (t-ball.bounce-0.25)/(1-ball.bounce-0.25);
+        h = Math.sin(p*Math.PI) * 18;
+      }
+    }
+    let dx = 0;
+    if (ball.drift !== 0 && t > ball.bounce){
+      const p = (t-ball.bounce)/(1-ball.bounce);
+      dx = ball.drift * p * p;
+    }
+    ball.x = bx + dx;
+    ball.y = by - h;
+    ball.z = h;
+    if (ball.t >= 1) triggerOut('BOWLED!');
+  } else if (state === 'PLAY'){
+    if (ball.mode === 'FLIGHT') updateFlight(dt);
+    else if (ball.mode === 'GROUND') updateGround(dt);
+    else if (ball.mode === 'THROW') updateThrow(dt);
+    updateRunning(dt);
+    updateFielders(dt);
+  } else if (state === 'RESULT'){
+    resultTimer -= dt;
+    updateFielders(dt);
+    if (resultTimer <= 0) nextBall();
+  } else if (state === 'OUT_SEQ'){
+    outTimer += dt;
+    umpireRise = Math.min(1, outTimer / 0.6);
+    if (outTimer >= 2.6) state = 'GAME_OVER';
+  }
+
+  if (swingFlash > 0) swingFlash -= dt;
+}
+
+// ================== RENDER ==================
+function drawBackground(){
+  if (sprites.background){
+    ctx.drawImage(sprites.background, 0, 0, W, H);
+    return;
+  }
+  const g = ctx.createLinearGradient(0,0,0,240);
+  g.addColorStop(0,'#00bfff'); g.addColorStop(1,'#87ceeb');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,240);
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(350,40,20,0,Math.PI*2); ctx.arc(380,30,30,0,Math.PI*2); ctx.arc(410,40,20,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ffe500'; ctx.fillRect(0,240,W,40);
+  ctx.fillStyle = '#7cb342';
+  for (let i=0;i<W;i+=30){ ctx.beginPath(); ctx.arc(i+15,275,20,Math.PI,0); ctx.fill(); }
+  ctx.fillStyle = '#7cb342'; ctx.fillRect(0,280,W,H-280);
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(0,310); ctx.quadraticCurveTo(W/2,280,W,310); ctx.stroke();
+  ctx.fillStyle = '#d4b483';
+  ctx.beginPath(); ctx.moveTo(510,260); ctx.lineTo(550,260); ctx.lineTo(630,530); ctx.lineTo(430,530); ctx.closePath(); ctx.fill();
+  drawStumps(FAR_STUMPS.x, FAR_STUMPS.y, 0.6);
+  drawStumps(STUMPS.x, STUMPS.y, 1.2);
+}
+
+function drawStumps(x,y,scale){
+  ctx.fillStyle = '#a0724a';
+  const h = 22*scale, w = 14*scale;
+  ctx.fillRect(x-w/2, y-h, 2*scale, h);
+  ctx.fillRect(x, y-h, 2*scale, h);
+  ctx.fillRect(x+w/2, y-h, 2*scale, h);
+  ctx.fillRect(x-w/2, y-h-4*scale, w, 2*scale);
+}
+
+function drawSpriteOrFallback(key, x, y, height, fallbackDraw){
+  const img = sprites[key];
+  if (img){
+    const w = height * (img.width / img.height);
+    ctx.drawImage(img, x - w/2, y - height, w, height);
+  } else {
+    fallbackDraw(x, y);
+  }
+}
+
+function drawBowler(){
+  let x = BOWLER_HOME.x, y = BOWLER_HOME.y;
+  if (state === 'RUNUP'){
+    const p = Math.min(1, runupTimer/1.2);
+    y = lerp(BOWLER_WIND.y, BOWLER_HOME.y, p) + bowlerBob;
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(x,y+4,10,3,0,0,Math.PI*2); ctx.fill();
+  drawSpriteOrFallback('bowler', x, y, 55, (bx,by) => {
+    ctx.fillStyle = '#8fbf5a';
+    ctx.beginPath(); ctx.ellipse(bx,by-12,8,13,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#c9e89a';
+    ctx.beginPath(); ctx.arc(bx,by-28,7,0,Math.PI*2); ctx.fill();
+  });
+}
+
+function drawBatter(isStriker){
+  const pos = (state === 'PLAY' && running.active) ? getBatterPos(isStriker) : (isStriker ? NEAR_W : FAR_W);
+  const x = pos.x, y = pos.y;
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath(); ctx.ellipse(x,y+6,14,5,0,0,Math.PI*2); ctx.fill();
+  const key = isStriker ? 'runner1' : 'runner2';
+  drawSpriteOrFallback(key, x, y, 55, (bx,by) => {
+    ctx.fillStyle = '#e8c19a';
+    ctx.beginPath(); ctx.ellipse(bx,by-18,11,18,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bx,by-44,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#f2f2f2';
+    ctx.fillRect(bx-10,by-18,7,20); ctx.fillRect(bx+3,by-18,7,20);
+  });
+  if (isStriker && (state === 'DELIVERY' || state === 'RUNUP')){
+    ctx.save();
+    const sw = swingFlash > 0 ? -1.1 : 0.3;
+    ctx.translate(x+16, y-30); ctx.rotate(sw);
+    ctx.fillStyle = '#c98a3c'; ctx.fillRect(-3,-26,6,32);
+    ctx.restore();
+  }
+}
+
+function drawFielders(){
+  const sorted = [...fielders].sort((a,b) => a.y - b.y);
+  for (const f of sorted){
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath(); ctx.ellipse(f.x,f.y+5,10,3,0,0,Math.PI*2); ctx.fill();
+    const key = 'catcher' + ((f.id % 6) + 1);
+    drawSpriteOrFallback(key, f.x, f.y, 50, (fx,fy) => {
+      ctx.fillStyle = '#5a8f3a';
+      ctx.beginPath(); ctx.ellipse(fx,fy-10,7,12,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#c9e89a';
+      ctx.beginPath(); ctx.arc(fx,fy-26,6,0,Math.PI*2); ctx.fill();
+    });
+  }
+}
+
+function drawBallSprite(x, y, r){
+  const img = sprites.ball;
+  if (img){
+    const size = Math.max(r * 4, 12);
+    const w = size * (img.width / img.height);
+    ctx.drawImage(img, x - w/2, y - size/2, w, size);
+  } else {
+    ctx.fillStyle = '#d63b3b';
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(x, y, r-1, 0, Math.PI*2); ctx.stroke();
+  }
+}
+
+function drawBall(){
+  if (state === 'DELIVERY'){
+    const r = 3 + ball.t*4;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath(); ctx.ellipse(ball.x+2, ball.y+2+r, r*0.9, r*0.4, 0,0,Math.PI*2); ctx.fill();
+    drawBallSprite(ball.x, ball.y - ball.z*0.7, r);
+  } else if (state === 'PLAY' && ball.mode){
+    const r = 5;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath(); ctx.ellipse(ball.x+2, ball.y+2+r, r*0.9, r*0.4, 0,0,Math.PI*2); ctx.fill();
+    drawBallSprite(ball.x, ball.y - ball.z*0.7, r);
+  }
+}
+
+function drawBalloons(){
+  for (const b of balloons){
+    ctx.globalAlpha = Math.min(1, b.life);
+    ctx.fillStyle = b.color;
+    ctx.beginPath(); ctx.ellipse(b.x, b.y, b.r, b.r*1.25, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y + b.r*1.25);
+    ctx.lineTo(b.x + Math.sin(b.phase)*4, b.y + b.r*2.2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawUmpire(){
+  if (state !== 'OUT_SEQ' && state !== 'GAME_OVER') return;
+  
+  // Umpire moved to top right
+  const x = 850, groundY = 330; 
+  const y = groundY + (1 - umpireRise) * 200;
+  
+  if (umpireRise > 0){
+    ctx.fillStyle = '#3d2a1a';
+    ctx.beginPath();
+    ctx.moveTo(x-30, groundY+10); ctx.lineTo(x-10, groundY+4);
+    ctx.lineTo(x+5, groundY+12); ctx.lineTo(x+20, groundY+4);
+    ctx.lineTo(x+35, groundY+10); ctx.lineTo(x+10, groundY+18);
+    ctx.lineTo(x-15, groundY+18); ctx.closePath(); ctx.fill();
+  }
+  
+  drawSpriteOrFallback('umpire', x, y, 140, (ux,uy) => {
+    ctx.fillStyle = '#8b5a2b';
+    ctx.beginPath(); ctx.ellipse(ux,uy-25,22,32,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ux,uy-62,20,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(ux-7,uy-64,4,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ux+7,uy-64,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(ux-7,uy-64,2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ux+7,uy-64,2,0,Math.PI*2); ctx.fill();
+  });
+  
+  if (umpireRise > 0.4){
+    ctx.save();
+    ctx.translate(x + 60, y - 95);
+    ctx.rotate(-0.15);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(-34, -24, 68, 46);
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2.5;
+    ctx.strokeRect(-34, -24, 68, 46);
+    ctx.fillStyle = '#d63b3b';
+    ctx.font = 'bold 24px Arial';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('OUT', 0, 2);
+    ctx.restore();
+  }
+}
+
+function drawScore(){
+  const s = Math.min(score, 999).toString().padStart(3,'0');
+  ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(488, 30, 84, 58);
+  ctx.fillStyle = '#ffe066'; ctx.fillRect(492, 34, 76, 50);
+  ctx.fillStyle = '#111'; ctx.font = 'bold 34px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(s, 530, 62);
+  ctx.font = 'bold 10px Arial';
+  ctx.fillText('RUNS', 530, 80);
+}
+
+function drawResultText(){
+  if (!resultText || (state !== 'RESULT' && state !== 'OUT_SEQ')) return;
+  ctx.font = 'bold 52px Arial';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 8;
+  ctx.strokeText(resultText, 530, 150);
+  ctx.fillStyle = resultColor;
+  ctx.fillText(resultText, 530, 150);
+}
+
+function drawSwingButton(){
+  if (state !== 'DELIVERY') return;
+  ctx.fillStyle = 'rgba(255,224,102,0.9)';
+  ctx.beginPath(); ctx.arc(530, 615, 38, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(530, 615, 38, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = '#333'; ctx.font = 'bold 14px Arial';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('SWING', 530, 615);
+}
+
+function drawGameOver(){
+  ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0,0,W,H);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ff4444'; ctx.font = 'bold 72px Arial';
+  ctx.fillText('OUT', 530, 200);
+  ctx.fillStyle = '#ffe066';
+  ctx.beginPath(); ctx.arc(530, 290, 28, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#d4a800'; ctx.font = 'bold 28px Arial';
+  ctx.fillText('★', 530, 292);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 40px Arial';
+  ctx.fillText('Score: ' + score, 530, 370);
+  ctx.fillStyle = '#ffe066'; ctx.font = 'bold 26px Arial';
+  ctx.fillText('Best: ' + best, 530, 425);
+  ctx.fillStyle = '#ccc'; ctx.font = 'bold 20px Arial';
+  ctx.fillText('Click or SPACE to play again', 530, 510);
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  if (!$('game').classList.contains('active')) return;
+
+  applyCamera();
+  drawBackground();
+  if (sprites.background){
+    drawStumps(FAR_STUMPS.x, FAR_STUMPS.y, 0.6);
+    drawStumps(STUMPS.x, STUMPS.y, 1.2);
+  }
+  drawFielders();
+  drawBowler();
+  drawBatter(false);
+  drawBatter(true);
+  drawBall();
+  drawBalloons();
+  drawUmpire();
+  restoreCamera();
+
+  drawScore();
+  drawResultText();
+  drawSwingButton();
+  if (state === 'GAME_OVER') drawGameOver();
+}
+
+// ================== LOOP ==================
+let last = performance.now();
+function loop(now){
+  const dt = Math.min((now-last)/1000, 0.05);
+  last = now;
+  if (state !== 'MENU' && state !== 'GAME_OVER') update(dt);
+  else if (state === 'GAME_OVER') { updateBalloons(dt); updateCamera(dt); }
+  render();
+  requestAnimationFrame(loop);
+}
+
+// ================== BOOT ==================
+(async () => {
+  showScreen('splash');
+  await preloadAll();
+  await new Promise(r => setTimeout(r, 1000));
+  showScreen('home');
+  startHomeAudio();
+  requestAnimationFrame(loop);
+})();
+
+})();
+</script>
+</body>
+</html>
